@@ -1,31 +1,523 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Binker: your wealth, measured in bitcoin.">
-  <meta name="color-scheme" content="light">
-  <title>Binker</title>
-  <style>
-    :root{font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#242824;background:#FAF9F6}
-    *{box-sizing:border-box}
-    body{margin:0;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column}
-    main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;padding:48px 20px;text-align:center}
-    .word{font-size:44px;font-weight:750;letter-spacing:-1.6px;margin:0}
-    h1{font-size:clamp(30px,6vw,40px);font-weight:600;letter-spacing:-1.2px;line-height:1.1;margin:18px 0 0}
-    p{margin:0;color:#686E68;font-size:16px}
-    footer{display:flex;justify-content:center;gap:20px;padding:24px 20px 32px;font-size:14px;color:#686E68}
-    a{color:inherit;text-underline-offset:4px}
-    a:focus-visible{outline:3px solid #3F5937;outline-offset:4px}
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Binker: your wealth, in bitcoin</title>
+<meta name="description" content="Find out if your money is really growing. Binker shows your accounts and the market in bitcoin.">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#FFFFFF">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta property="og:title" content="Binker: your wealth, in bitcoin">
+<meta property="og:description" content="Find out if your money is really growing.">
+<meta property="og:url" content="https://binker.app/">
+<meta property="og:type" content="website">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: white page, one calm column of sections. The S&P chart is the loud moment; Markets is the richest section.
+   Light only. Brand is ink and paper; signal orange appears only as the dot in the mark and as the period of the two headlines, never on figures. */
+:root{
+  color-scheme:light;
+  --page:#FFFFFF; --paper:#FAF9F6; --surface:#FFFFFF; --subtle:#F1F2ED; --line:#E5E7E1; --line-strong:#D5D9D1;
+  --ink:#242824; --muted:#686E68; --faint:#9AA099;
+  --gain:#28734F; --gain-wash:#E4F1E8; --loss:#B33D32; --loss-wash:#F8E6E3;
+  --signal:#FF5F15;
+  --font:"Geist",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"Geist Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  --r-md:16px; --r-lg:24px;
+}
+
+*{box-sizing:border-box}
+body{background:var(--page);color:var(--ink);font-family:var(--font);font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1120px;margin:0 auto;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px))}
+h1,h2,h3{text-wrap:balance;margin:0;font-weight:600}
+p{margin:0}
+.num{font-variant-numeric:tabular-nums}
+.gain{color:var(--gain)} .loss{color:var(--loss)} .flat{color:var(--muted)}
+a{color:inherit}
+a:focus-visible,button:focus-visible{outline:3px solid var(--ink);outline-offset:3px;border-radius:10px}
+.section-head{display:flex;flex-direction:column;gap:14px;max-width:640px}
+.section-head h2{font-size:clamp(34px,4.8vw,56px);letter-spacing:-.045em;line-height:1.02}
+.section-head p{font-size:clamp(17px,1.8vw,20px);color:var(--muted);max-width:40ch}
+
+/* header */
+header .wrap{display:flex;align-items:center;justify-content:space-between;padding-block:22px}
+.word{font-weight:700;font-size:24px;letter-spacing:-.045em;text-decoration:none;display:inline-flex;align-items:center;gap:8px}
+.word svg{width:26px;height:26px;flex:none}
+.top-get{font-size:14px;font-weight:600;text-decoration:none;padding:9px 16px;border-radius:999px;background:var(--subtle);color:var(--ink)}
+
+/* store buttons */
+.stores{display:flex;flex-wrap:wrap;gap:12px}
+.store{display:inline-flex;align-items:center;gap:10px;padding:11px 20px 11px 16px;border-radius:13px;background:var(--ink);color:#fff;text-decoration:none;line-height:1.1;transition:transform .15s ease}
+.store:hover{transform:translateY(-1px)}
+.store svg{width:24px;height:24px;fill:currentColor;flex:none}
+.store small{display:block;font-size:11px;opacity:.8}
+.store b{font-size:18px;font-weight:600;letter-spacing:-.01em}
+
+/* hero */
+.hero .wrap{display:grid;grid-template-columns:1.15fr .85fr;gap:48px;align-items:center;padding-block:48px 112px}
+.hero h1{font-size:clamp(48px,7.6vw,92px);line-height:.96;letter-spacing:-.055em;font-weight:650}
+.dot{display:inline-block;width:.17em;height:.17em;border-radius:50%;background:var(--signal);margin-left:.05em}
+.hero .sub{font-size:clamp(19px,2.1vw,23px);color:var(--muted);margin:26px 0 38px;max-width:26ch;line-height:1.35}
+.hero{overflow-x:clip}
+.hero-phone{justify-self:center;position:relative}
+.hero-phone::before{content:"";position:absolute;inset:8% -18% 4%;background:radial-gradient(closest-side,var(--subtle),transparent);z-index:-1}
+
+/* iPhone */
+.iphone{--w:300px;width:var(--w);max-width:100%;aspect-ratio:300/622;border-radius:56px;background:linear-gradient(145deg,#3a3c3f,#1b1c1e 40%,#2c2d30);padding:11px;position:relative;box-shadow:0 50px 90px -40px rgba(20,24,20,.45),0 18px 30px -20px rgba(20,24,20,.3),inset 0 0 0 1.5px #4a4c50}
+.iphone::before,.iphone::after{content:"";position:absolute;width:4px;border-radius:2px;background:#2a2b2e}
+.iphone::before{left:-3px;top:23%;height:12%;box-shadow:0 -60px 0 -0 #2a2b2e}
+.iphone::after{right:-3px;top:28%;height:16%}
+.screen{position:relative;height:100%;border-radius:46px;overflow:hidden;background:var(--paper);display:flex;flex-direction:column;font-size:12px;color:var(--ink)}
+.island{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:92px;height:27px;border-radius:20px;background:#000;z-index:3}
+.status{height:46px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:4px 28px 0 32px;font-size:14px;font-weight:600;letter-spacing:-.01em}
+.status .icons{display:flex;gap:5px;align-items:center}
+.status svg{height:11px;width:auto;fill:var(--ink)}
+.app{flex:1;display:flex;flex-direction:column;padding:8px 14px 0;gap:8px;min-height:0}
+.cap{display:flex;align-items:center;justify-content:center;gap:5px;font-size:11px;color:var(--muted);font-weight:500}
+.cap svg{width:13px;height:13px;stroke:var(--muted);fill:none;stroke-width:1.6}
+.hero-amt{text-align:center;font-size:35px;font-weight:600;letter-spacing:-.05em;line-height:1.1;margin-top:4px}
+.res{text-align:center;font-size:11.5px;font-weight:500}
+.res span{color:var(--muted)}
+.chart{display:block;flex:none;width:calc(100% + 28px);height:auto;margin:4px -14px 0}
+.seg{display:flex;justify-content:space-between;padding:2px 4px}
+.seg span{font-size:10.5px;font-weight:600;color:var(--muted);padding:5px 8px;border-radius:999px}
+.seg .on{background:var(--subtle);color:var(--ink)}
+.buckets{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:auto}
+.bucket{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:13px 12px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.bucket small{font-size:10px;font-weight:600;color:var(--muted)}
+.bucket b{font-size:14.5px;font-weight:600;letter-spacing:-.02em}
+.bucket em{font-style:normal;font-size:10.5px;font-weight:600}
+.tabs{flex:none;display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--line);padding:8px 0 24px;margin-top:8px;background:var(--paper)}
+.tabs span{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:9.5px;font-weight:600;color:var(--muted)}
+.tabs .on{color:var(--ink)}
+.tabs svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.tabs .on svg{stroke-width:2}
+.homebar{position:absolute;bottom:7px;left:50%;transform:translateX(-50%);width:100px;height:4px;border-radius:2px;background:var(--ink)}
+
+/* hook */
+.hook{background:var(--paper);border-block:1px solid var(--line)}
+.hook .wrap{padding-block:112px;display:flex;flex-direction:column;gap:56px}
+.eyebrow{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.hook-top{display:grid;grid-template-columns:1fr auto;gap:24px 48px;align-items:end}
+.hook-top h2{font-size:clamp(44px,7vw,96px);letter-spacing:-.06em;line-height:.92;font-weight:650}
+.hook-top .what{display:flex;flex-direction:column;gap:6px;text-align:right;padding-bottom:10px}
+.hook-top .what span{font-family:var(--mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.hook-top .what b{font-size:clamp(20px,2.2vw,26px);font-weight:600;letter-spacing:-.03em}
+/* The study: two year bands, the result in big type at the top of each band, the lines underneath. */
+.study{--gut:0px;position:relative;min-width:0}
+.band{position:absolute;top:0;bottom:34px;border-radius:22px;pointer-events:none}
+.band.up{background:linear-gradient(180deg,rgba(40,115,79,.085),rgba(40,115,79,.02))}
+.band.down{background:linear-gradient(180deg,rgba(179,61,50,.075),rgba(179,61,50,.02))}
+.stats{position:relative;display:grid;grid-template-columns:var(--c1,1fr) var(--c2,1fr) var(--c3,1fr) var(--gut)}
+.stat{padding:30px 28px 0;display:flex;flex-direction:column;min-width:0}
+.stat .yr{font-family:var(--mono);font-size:13px;font-weight:500;color:var(--ink);letter-spacing:.04em}
+.stat strong{font-size:clamp(34px,4.6vw,60px);font-weight:650;letter-spacing:-.055em;line-height:.95;margin-top:18px;white-space:nowrap}
+.stat dl{margin:22px 0 0;display:grid;grid-template-columns:auto 1fr;gap:8px 14px;align-items:baseline}
+.stat dt{font-size:14px;color:var(--muted)}
+.stat dd{margin:0;font-family:var(--mono);font-size:15px;font-weight:500;color:var(--muted);font-variant-numeric:tabular-nums}
+.stat dd.big{font-size:22px;font-weight:600;letter-spacing:-.02em}
+.stat dd.gain{color:var(--gain)} .stat dd.loss{color:var(--loss)}
+.stat.quiet .yr{color:var(--faint)}
+.plot{position:relative;height:380px;margin-top:8px}
+.plot svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.plot svg{clip-path:inset(-20px 0 -20px 0);transition:clip-path 1.8s cubic-bezier(.4,0,.2,1) .15s}
+.plot.pre svg{clip-path:inset(-20px 100% -20px 0)}
+.plot text{font-family:var(--font)}
+.axis{position:relative;display:grid;grid-template-columns:var(--c1,1fr) var(--c2,1fr) var(--c3,1fr) var(--gut);border-top:1px solid var(--line-strong);height:34px;align-items:center}
+.lkey{margin:10px 0 0;display:flex;justify-content:flex-end;gap:18px;align-items:center}
+.lkey span{display:inline-flex;align-items:center;gap:7px;font-size:13px;color:var(--muted)}
+.lkey i{display:inline-block;width:18px;border-top:2px solid #AEB4AB;border-radius:2px}
+.lkey i.b{border-top:3px solid var(--ink)}
+.axis span{font-family:var(--mono);font-size:12px;color:var(--faint);padding-left:28px;letter-spacing:.04em}
+
+/* together */
+.together .wrap{padding-block:120px;display:flex;flex-direction:column;gap:64px}
+.merge{position:relative;display:grid;grid-template-columns:minmax(0,1fr) 120px minmax(0,1.05fr);align-items:center}
+.wires{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+.sources{position:relative;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.src{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px 18px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.src .kind{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint)}
+.src b{font-size:15px;font-weight:600;margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.src .amt{font-family:var(--mono);font-size:14px;color:var(--muted)}
+.into{grid-column:2;display:flex;justify-content:center;position:relative}
+.into span{font-size:12px;font-weight:600;color:var(--ink);background:var(--page);border:1px solid var(--line-strong);border-radius:999px;padding:6px 12px;white-space:nowrap}
+.result{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:28px;padding:30px 32px 26px;display:flex;flex-direction:column;box-shadow:0 40px 80px -55px rgba(20,24,20,.45);min-width:0}
+.result .rcap{font-size:14px;color:var(--muted);font-weight:500}
+.result .big{font-size:clamp(34px,4.2vw,52px);font-weight:600;letter-spacing:-.05em;line-height:1.05;margin-top:6px}
+.result .chg{font-size:15px;font-weight:600;margin-top:6px}
+.months{display:grid;grid-template-columns:repeat(12,1fr);gap:6px;align-items:end;height:150px;margin-top:30px;border-bottom:1px solid var(--line-strong);padding-bottom:0}
+.mb{position:relative;background:var(--selected,#DDE1D9);border-radius:6px 6px 2px 2px}
+.mb.now{background:var(--gain)}
+.mb i{position:absolute;top:100%;left:50%;transform:translateX(-50%);margin-top:8px;font-style:normal;font-family:var(--mono);font-size:10.5px;color:var(--faint)}
+.result{padding-bottom:40px}
+
+/* markets */
+.markets{background:var(--paper);border-block:1px solid var(--line)}
+.markets .wrap{padding-block:120px;display:flex;flex-direction:column;gap:44px}
+.board{border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden;background:var(--surface)}
+.board-head{display:flex;justify-content:space-between;gap:16px;padding:16px 24px;background:var(--surface);border-bottom:1px solid var(--line);font-size:13px;color:var(--muted);flex-wrap:wrap}
+.board-rows{display:grid;grid-template-columns:1fr 1fr}
+.mrow{display:grid;grid-template-columns:40px minmax(0,1fr) auto;gap:14px;align-items:center;padding:16px 24px;border-bottom:1px solid var(--line)}
+.board-rows .mrow:nth-child(odd){border-right:1px solid var(--line)}
+.mrow:nth-last-child(-n+2){border-bottom:0}
+.av{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;overflow:hidden;border:1px solid var(--line);background:var(--surface);font-size:11px;font-weight:700;color:var(--ink);letter-spacing:-.02em}
+.av img{width:62%;height:62%;object-fit:contain}
+.av.dark{background:var(--ink);border-color:var(--ink)}
+.av.tick{background:var(--subtle)}
+.av.btc{background:var(--ink);color:var(--paper);border-color:var(--ink);font-size:17px}
+.mname{min-width:0}
+.mname b{display:block;font-size:16px;font-weight:600;letter-spacing:-.01em}
+.mname span{display:block;font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mval{text-align:right;display:flex;flex-direction:column;align-items:flex-end}
+.mval b{font-size:16px;font-weight:600;letter-spacing:-.01em}
+.mval span{font-size:13px;font-weight:600}
+
+/* features */
+.features .wrap{padding-block:120px;display:flex;flex-direction:column;gap:128px}
+.feat{display:grid;grid-template-columns:1fr 1fr;gap:72px;align-items:center}
+.feat.flip .section-head{order:2}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:10px 24px;min-width:0;box-shadow:0 30px 60px -45px rgba(20,24,20,.35)}
+.arow{display:grid;grid-template-columns:36px minmax(0,1fr) auto;gap:14px;align-items:center;padding:14px 0;border-bottom:1px solid var(--line)}
+.arow .av{width:36px;height:36px;font-size:15px}
+.arow b{font-size:15px;font-weight:600;display:block}
+.arow small{font-size:13px;color:var(--muted);display:block}
+.arow .amt{font-size:15px;font-weight:600;letter-spacing:-.01em}
+.total{display:flex;justify-content:space-between;align-items:baseline;padding:20px 0 14px;gap:12px;flex-wrap:wrap}
+.total span{font-size:15px;color:var(--muted);font-weight:500}
+.total b{font-size:clamp(24px,2.8vw,30px);font-weight:600;letter-spacing:-.04em}
+
+.flow{display:flex;flex-direction:column;align-items:stretch;gap:18px;min-width:0}
+.ok{width:24px;height:24px;border-radius:50%;background:var(--subtle);color:var(--ink);display:grid;place-items:center}
+.ok svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.caught-row{display:flex;align-items:center;gap:12px;padding:16px 0 12px;font-size:15px;font-weight:600}
+.caught-row .ok{background:var(--ink);color:var(--paper)}
+
+/* final cta */
+.final{background:var(--ink);color:#FAF9F6}
+.final .store{background:#FAF9F6;color:#242824}
+.final-app{display:flex;align-items:center;gap:16px}
+.final-icon{width:72px;height:72px;border-radius:22.5%;overflow:hidden;flex:none;box-shadow:0 0 0 1px rgba(255,255,255,.14)}
+.final-icon svg{display:block;width:100%;height:100%}
+.final-app b{display:block;font-size:18px;font-weight:600}
+.final-app span{display:block;font-size:14px;color:#9BA39A}
+.final .wrap{padding-block:112px;display:flex;flex-direction:column;align-items:flex-start;gap:34px}
+.final h2{font-size:clamp(40px,6.2vw,76px);letter-spacing:-.055em;line-height:.98;color:#FAF9F6}
+
+footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;padding-block:28px 40px;font-size:14px;color:var(--muted)}
+footer nav{display:flex;gap:20px}
+footer a{text-underline-offset:4px}
+
+
+@media (max-width:900px){
+  .hero .wrap,.feat{grid-template-columns:1fr;gap:44px}
+  .merge{grid-template-columns:1fr;gap:0}
+  .wires{display:none}
+  .into{grid-column:auto;padding:18px 0}
+  .into::before{content:"";position:absolute;left:50%;top:0;bottom:0;border-left:1px dashed var(--line-strong)}
+  .into span{position:relative}
+  .together .wrap{padding-block:80px;gap:44px}
+  .hook-top{grid-template-columns:1fr}
+  .hook-top .what{text-align:left}
+  .stat{padding:20px 12px 0}
+  .stat strong{font-size:26px;margin-top:12px;white-space:normal;width:min-content}
+  .stat dl{grid-template-columns:1fr;gap:2px;margin-top:14px}
+  .stat dt{font-size:12px}
+  .stat dd{font-size:13px;margin-bottom:6px}
+  .stat dd.big{font-size:17px}
+  .stat.quiet{visibility:hidden}
+  .axis span{padding-left:12px}
+  .plot{height:300px}
+  .hero .wrap{padding-block:16px 80px}
+  .feat.flip .section-head{order:0}
+  .board-rows{grid-template-columns:1fr}
+  .board-rows .mrow:nth-child(odd){border-right:0}
+  .mrow:nth-last-child(2){border-bottom:1px solid var(--line)}
+  .hook .wrap,.markets .wrap,.features .wrap,.final .wrap{padding-block:80px}
+  .features .wrap{gap:96px}
+}
+@media (max-width:440px){
+  .sources{gap:8px}
+  .src{padding:12px 13px}
+  .src b{font-size:14px}
+  .src .amt{font-size:12.5px}
+  .result{padding:24px 20px 40px;border-radius:22px}
+  .months{gap:4px;height:120px}
+  .mb i{font-size:9px}
+  .mrow{padding:14px 16px;gap:12px}
+  .board-head{padding:14px 16px}
+  .panel{padding:6px 16px}
+  .stat strong{font-size:22px;white-space:normal}
+  .iphone{--w:280px}
+}
+@media (prefers-reduced-motion:reduce){ .store,.plot svg{transition:none} }
+</style>
 </head>
 <body>
-  <main>
-    <svg aria-hidden="true" width="112" height="112" viewBox="0 0 35 35"><rect width="35" height="35" rx="10" fill="#E2EAD9"/><g transform="translate(5 5) scale(1.0416666667)"><rect x="5" y="3" width="5" height="18" rx="2.5" fill="#242824"/><circle cx="14" cy="14" r="7" fill="#242824"/><circle cx="14" cy="14" r="2.5" fill="#E2EAD9"/></g></svg>
-    <p class="word" aria-label="Binker" style="color:#242824">binker</p>
-    <h1>Your wealth, in&nbsp;₿</h1>
-    <p>Coming soon to the App Store</p>
-  </main>
-  <footer><a href="/privacy/">Privacy</a><a href="mailto:support@binker.app">Support</a></footer>
+
+<header>
+  <div class="wrap">
+    <a class="word" href="/" aria-label="Binker home"><svg viewBox="3 2 20 20" aria-hidden="true"><rect x="5" y="3" width="5" height="18" rx="2.5" fill="#242824"/><circle cx="14" cy="14" r="7" fill="#242824"/><circle cx="14" cy="14" r="2.9" fill="#FF5F15"/></svg>binker</a>
+    <a class="top-get" href="#download">Get the app</a>
+  </div>
+</header>
+
+<main>
+  <!-- HERO -->
+  <section class="hero">
+    <div class="wrap">
+      <div>
+        <h1>Your wealth, in bitcoin<span class="dot" aria-hidden="true"></span></h1>
+        <p class="sub">Find out if your money is really growing.</p>
+        <!-- Store links are placeholders until the apps are live. -->
+        <div class="stores">
+          <a class="store" href="#" data-store="ios" aria-label="Download on the App Store">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.4 12.6c0-2.5 2-3.6 2.1-3.7-1.2-1.7-3-1.9-3.6-2-1.5-.2-3 .9-3.8.9-.8 0-2-.9-3.3-.9-1.7 0-3.3 1-4.2 2.5-1.8 3.1-.5 7.7 1.3 10.2.9 1.2 1.9 2.6 3.2 2.6 1.3-.1 1.8-.8 3.3-.8s2 .8 3.3.8c1.4 0 2.3-1.3 3.1-2.5 1-1.4 1.4-2.8 1.4-2.9 0 0-2.8-1.1-2.8-4.2zM13.9 5.2c.7-.8 1.2-2 1-3.2-1 .1-2.2.7-3 1.5-.6.7-1.2 1.9-1 3.1 1.1.1 2.3-.6 3-1.4z"/></svg>
+            <span><small>Download on the</small><b>App Store</b></span>
+          </a>
+          <a class="store" href="#" data-store="android" aria-label="Get it on Google Play">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.6 2.3c-.2.2-.3.6-.3 1v17.4c0 .4.1.8.3 1l9.7-9.7-9.7-9.7zm10.6 10.6 2.7 2.7-11.4 6.5 8.7-9.2zm0-1.8L5.5 1.9l11.4 6.5-2.7 2.7zm3.7-2.1 3 1.7c.9.5.9 1.9 0 2.4l-3 1.7-3-3 3-2.8z"/></svg>
+            <span><small>Get it on</small><b>Google Play</b></span>
+          </a>
+        </div>
+      </div>
+
+      <div class="hero-phone">
+        <div class="iphone" role="img" aria-label="Binker Home screen on an iPhone, sample figures">
+          <div class="screen">
+            <div class="island"></div>
+            <div class="status">
+              <span>9:41</span>
+              <span class="icons">
+                <svg viewBox="0 0 18 11"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="5" y="5" width="3" height="6" rx="1"/><rect x="10" y="2.5" width="3" height="8.5" rx="1"/><rect x="15" y="0" width="3" height="11" rx="1"/></svg>
+                <svg viewBox="0 0 16 11"><path d="M8 2.2c2.3 0 4.4.9 6 2.4l1.2-1.2C13.3 1.5 10.8.5 8 .5S2.7 1.5.8 3.4L2 4.6c1.6-1.5 3.7-2.4 6-2.4zm0 3.3c1.4 0 2.6.5 3.6 1.4l1.2-1.2C11.5 4.5 9.8 3.8 8 3.8s-3.5.7-4.8 1.9l1.2 1.2c1-.9 2.2-1.4 3.6-1.4zM8 8.7c-.6 0-1.1.2-1.5.6L8 10.8l1.5-1.5c-.4-.4-.9-.6-1.5-.6z"/></svg>
+                <svg viewBox="0 0 26 12"><rect x=".5" y=".5" width="22" height="11" rx="3.2" fill="none" stroke="currentColor" style="stroke:var(--ink);opacity:.4"/><rect x="2" y="2" width="17" height="8" rx="2"/><rect x="23.6" y="4" width="1.6" height="4" rx=".8" style="opacity:.4"/></svg>
+              </span>
+            </div>
+            <div class="app">
+              <div class="cap">Net worth <svg viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></div>
+              <div class="hero-amt num">₿288,412,950</div>
+              <div class="res num gain">+₿92,318,604 (+47.08%) <span>past year</span></div>
+              <svg class="chart" id="hero-chart" viewBox="0 0 270 220" aria-hidden="true"></svg>
+              <div class="seg"><span>1W</span><span>1M</span><span>3M</span><span>YTD</span><span class="on">1Y</span><span>5Y</span></div>
+              <div class="buckets">
+                <div class="bucket"><small>Savings</small><b class="num">₿67,618,720</b><em class="num gain">+24.87%</em></div>
+                <div class="bucket"><small>Investments</small><b class="num">₿220,794,230</b><em class="num gain">+56.12%</em></div>
+              </div>
+            </div>
+            <div class="tabs">
+              <span class="on"><svg viewBox="0 0 24 24"><path d="M3 7.5A2.5 2.5 0 0 1 5.5 5h12A2.5 2.5 0 0 1 20 7.5V9h-4a3 3 0 0 0 0 6h4v1.5a2.5 2.5 0 0 1-2.5 2.5h-12A2.5 2.5 0 0 1 3 16.5z"/><path d="M20 9h1v6h-1"/><circle cx="16" cy="12" r=".6"/></svg>Home</span>
+              <span><svg viewBox="0 0 24 24"><path d="M3 17l5-5 4 3 8-8"/><path d="M15 7h5v5"/></svg>Markets</span>
+              <span><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-3.5 4.5-5 8-5s6.5 1.5 8 5"/></svg>Account</span>
+            </div>
+            <div class="homebar"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOOK -->
+  <section class="hook">
+    <div class="wrap">
+      <div class="hook-top">
+        <h2>Measure what matters.</h2>
+        <p class="what"><span>The S&amp;P 500, 2022–2024</span><b>Same index, opposite years.</b></p>
+      </div>
+
+      <div class="study" id="sp" role="img" aria-label="The S&amp;P 500 from 2022 to 2024. In 2022 it fell 19% in dollars and rose 125% in bitcoin. In 2024 it rose 23% in dollars and fell 44% in bitcoin.">
+        <div class="band up" aria-hidden="true"></div>
+        <div class="band down" aria-hidden="true"></div>
+        <div class="stats" aria-hidden="true">
+          <div class="stat"><span class="yr">2022</span><strong class="gain">Good year</strong><dl><dt>In bitcoin</dt><dd class="big gain">+125%</dd><dt>In dollars</dt><dd>−19%</dd></dl></div>
+          <div class="stat quiet"><span class="yr">2023</span></div>
+          <div class="stat"><span class="yr">2024</span><strong class="loss">Bad year</strong><dl><dt>In bitcoin</dt><dd class="big loss">−44%</dd><dt>In dollars</dt><dd>+23%</dd></dl></div>
+        </div>
+        <div class="plot" id="sp-plot" aria-hidden="true"><svg id="sp-chart"></svg></div>
+        <div class="axis" aria-hidden="true"><span>Jan 2022</span><span>Jan 2023</span><span>Jan 2024</span></div>
+        <p class="lkey" aria-hidden="true"><span><i class="b"></i>Bitcoin</span><span><i></i>Dollars</span></p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- TOGETHER: scattered accounts, one unit, one number over time -->
+  <section class="together">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>See the whole picture.</h2>
+        <p>Your money stays where it is. You finally see how all of it is doing.</p>
+      </div>
+
+      <div class="merge" id="merge">
+        <svg class="wires" id="wires" aria-hidden="true"></svg>
+        <div class="sources" aria-label="Sample accounts in their own currencies">
+            <div class="src"><span class="kind">Bank</span><b>Checking</b><span class="amt num">$3,810.38</span></div>
+            <div class="src"><span class="kind">Bank</span><b>High-yield savings</b><span class="amt num">$17,996.57</span></div>
+            <div class="src"><span class="kind">Retirement</span><b>401(k)</b><span class="amt num">$75,908.43</span></div>
+            <div class="src"><span class="kind">Retirement</span><b>Roth IRA</b><span class="amt num">$28,883.20</span></div>
+            <div class="src"><span class="kind">Brokerage</span><b>Brokerage</b><span class="amt num">$33,032.48</span></div>
+            <div class="src"><span class="kind">Exchange</span><b>Bitcoin</b><span class="amt num">0.32684 BTC</span></div>
+        </div>
+        <div class="into" aria-hidden="true"><span>Measured in ₿</span></div>
+        <div class="result" aria-label="Net worth ₿288,412,950, up ₿92,318,604 over the past year, shown month by month">
+          <span class="rcap">Net worth</span>
+          <b class="big num">₿288,412,950</b>
+          <span class="chg num gain">+₿92,318,604 past year</span>
+          <div class="months" aria-hidden="true"><span class="mb" style="height:65.4%"><i>Dec</i></span><span class="mb" style="height:67.8%"><i>Jan</i></span><span class="mb" style="height:66.6%"><i>Feb</i></span><span class="mb" style="height:70.4%"><i>Mar</i></span><span class="mb" style="height:74.3%"><i>Apr</i></span><span class="mb" style="height:72.8%"><i>May</i></span><span class="mb" style="height:77.2%"><i>Jun</i></span><span class="mb" style="height:81.0%"><i>Jul</i></span><span class="mb" style="height:79.9%"><i>Aug</i></span><span class="mb" style="height:85.4%"><i>Sep</i></span><span class="mb" style="height:90.6%"><i>Oct</i></span><span class="mb now" style="height:96.1%"><i>Nov</i></span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MARKETS: a dated snapshot, no live data -->
+  <section class="markets">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="eyebrow">Markets</p>
+        <h2>What it all costs in bitcoin.</h2>
+        <p>Company shares, ETFs and commodities.</p>
+      </div>
+
+      <div class="board">
+        <div class="board-head"><span>One share, in ₿</span><span>Closing prices, Nov 18, 2026</span></div>
+        <div class="board-rows">
+          <div class="mrow"><span class="av dark"><img src="logos/AAPL.png" alt=""></span><span class="mname"><b>Apple</b><span>AAPL</span></span><span class="mval"><b class="num">₿559,558</b></span></div>
+          <div class="mrow"><span class="av "><img src="logos/MSFT.png" alt=""></span><span class="mname"><b>Microsoft</b><span>MSFT</span></span><span class="mval"><b class="num">₿806,973</b></span></div>
+          <div class="mrow"><span class="av "><img src="logos/NVDA.png" alt=""></span><span class="mname"><b>NVIDIA</b><span>NVDA</span></span><span class="mval"><b class="num">₿239,668</b></span></div>
+          <div class="mrow"><span class="av dark"><img src="logos/AMZN.png" alt=""></span><span class="mname"><b>Amazon</b><span>AMZN</span></span><span class="mval"><b class="num">₿425,070</b></span></div>
+          <div class="mrow"><span class="av "><img src="logos/GOOGL.png" alt=""></span><span class="mname"><b>Alphabet (Google)</b><span>GOOGL</span></span><span class="mval"><b class="num">₿448,408</b></span></div>
+          <div class="mrow"><span class="av "><img src="logos/META.png" alt=""></span><span class="mname"><b>Meta</b><span>META</span></span><span class="mval"><b class="num">₿978,579</b></span></div>
+          <div class="mrow"><span class="av "><img src="logos/TSLA.png" alt=""></span><span class="mname"><b>Tesla</b><span>TSLA</span></span><span class="mval"><b class="num">₿609,203</b></span></div>
+          <div class="mrow"><span class="av "><img src="logos/NFLX.png" alt=""></span><span class="mname"><b>Netflix</b><span>NFLX</span></span><span class="mval"><b class="num">₿94,972</b></span></div>
+          <div class="mrow"><span class="av "><img src="logos/AVGO.png" alt=""></span><span class="mname"><b>Broadcom</b><span>AVGO</span></span><span class="mval"><b class="num">₿562,098</b></span></div>
+          <div class="mrow"><span class="av tick">VOO</span><span class="mname"><b>S&amp;P 500 ETF</b><span>VOO</span></span><span class="mval"><b class="num">₿1,065,787</b></span></div>
+          <div class="mrow"><span class="av tick">QQQ</span><span class="mname"><b>Nasdaq-100 ETF</b><span>QQQ</span></span><span class="mval"><b class="num">₿1,047,053</b></span></div>
+          <div class="mrow"><span class="av tick">GLD</span><span class="mname"><b>Gold</b><span>GLD</span></span><span class="mval"><b class="num">₿541,681</b></span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- UP TO DATE: says nothing about how accounts come in, so it holds whether data is uploaded or linked. -->
+  <section class="features">
+    <div class="wrap">
+      <div class="feat flip">
+        <div class="section-head">
+          <h2>Up to date in a couple of minutes.</h2>
+        </div>
+        <div class="flow" aria-label="Three accounts, all up to date">
+          <div class="panel">
+            <div class="arow"><span class="av tick">$</span><span><b>Checking</b><small>Updated Nov 18</small></span><span class="ok"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></svg></span></div>
+            <div class="arow"><span class="av tick">↗</span><span><b>401(k)</b><small>Updated Nov 18</small></span><span class="ok"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></svg></span></div>
+            <div class="arow"><span class="av tick">↗</span><span><b>Brokerage</b><small>Updated Nov 18</small></span><span class="ok"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></svg></span></div>
+            <div class="caught-row"><span class="ok"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></svg></span><span>All accounts up to date</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FINAL CTA -->
+  <section class="final" id="download">
+    <div class="wrap">
+      <div class="final-app"><div class="final-icon"><svg viewBox="0 0 1024 1024" aria-hidden="true"><rect width="1024" height="1024" fill="#242824"/><g transform="translate(192 192) scale(26.6666666667)"><rect x="5" y="3" width="5" height="18" rx="2.5" fill="#FAF9F6"/><circle cx="14" cy="14" r="7" fill="#FAF9F6"/><circle cx="14" cy="14" r="2.9" fill="#FF5F15"/></g></svg></div><div><b>Binker</b><span>Your wealth, in bitcoin</span></div></div>
+      <h2>See your wealth in bitcoin<span class="dot" aria-hidden="true"></span></h2>
+      <div class="stores">
+        <a class="store" href="#" data-store="ios" aria-label="Download on the App Store">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.4 12.6c0-2.5 2-3.6 2.1-3.7-1.2-1.7-3-1.9-3.6-2-1.5-.2-3 .9-3.8.9-.8 0-2-.9-3.3-.9-1.7 0-3.3 1-4.2 2.5-1.8 3.1-.5 7.7 1.3 10.2.9 1.2 1.9 2.6 3.2 2.6 1.3-.1 1.8-.8 3.3-.8s2 .8 3.3.8c1.4 0 2.3-1.3 3.1-2.5 1-1.4 1.4-2.8 1.4-2.9 0 0-2.8-1.1-2.8-4.2zM13.9 5.2c.7-.8 1.2-2 1-3.2-1 .1-2.2.7-3 1.5-.6.7-1.2 1.9-1 3.1 1.1.1 2.3-.6 3-1.4z"/></svg>
+          <span><small>Download on the</small><b>App Store</b></span>
+        </a>
+        <a class="store" href="#" data-store="android" aria-label="Get it on Google Play">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.6 2.3c-.2.2-.3.6-.3 1v17.4c0 .4.1.8.3 1l9.7-9.7-9.7-9.7zm10.6 10.6 2.7 2.7-11.4 6.5 8.7-9.2zm0-1.8L5.5 1.9l11.4 6.5-2.7 2.7zm3.7-2.1 3 1.7c.9.5.9 1.9 0 2.4l-3 1.7-3-3 3-2.8z"/></svg>
+          <span><small>Get it on</small><b>Google Play</b></span>
+        </a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span class="word" style="font-size:18px"><svg viewBox="3 2 20 20" aria-hidden="true"><rect x="5" y="3" width="5" height="18" rx="2.5" fill="#242824"/><circle cx="14" cy="14" r="7" fill="#242824"/><circle cx="14" cy="14" r="2.9" fill="#FF5F15"/></svg>binker</span>
+    <nav><a href="/privacy/">Privacy</a><a href="mailto:support@binker.app">Support</a></nav>
+  </div>
+</footer>
+
+
+<script>
+(function(){
+
+  // Hero chart: a sample year of net worth, same shape the app draws.
+  (function(){
+    var svg = document.getElementById("hero-chart"), W = 270, H = 220, n = 60, seed = 7, v = 0, pts = [];
+    function rnd(){ seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }
+    for (var i = 0; i < n; i++){ v += (rnd() - 0.38) * 1.0 + (i > 30 ? 0.18 : 0); pts.push(v); }
+    var min = Math.min.apply(null, pts), max = Math.max.apply(null, pts);
+    var xy = pts.map(function(p, i){ return [i * W / (n - 1), 14 + (H - 28) * (1 - (p - min) / (max - min))]; });
+    var line = xy.map(function(p, i){ return (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1); }).join(" ");
+    var last = xy[xy.length - 1];
+    svg.innerHTML = '<defs><linearGradient id="hf" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#28734F" stop-opacity=".2"/><stop offset="1" stop-color="#28734F" stop-opacity="0"/></linearGradient></defs>' +
+      '<path d="' + line + ' L' + W + ' ' + H + ' L0 ' + H + ' Z" fill="url(#hf)"/>' +
+      '<path d="' + line + '" fill="none" stroke="#28734F" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>';
+  })();
+
+  // Wires: each account card joins the result card, drawn from the real layout.
+  (function(){
+    var m=document.getElementById("merge"), svg=document.getElementById("wires");
+    function draw(){
+      if (innerWidth<=900){ svg.innerHTML=""; return; }
+      var M=m.getBoundingClientRect(), R=m.querySelector(".result").getBoundingClientRect(), tx=R.left-M.left, ty=R.top-M.top+R.height/2, out="";
+      var pill=m.querySelector(".into span").getBoundingClientRect(), px=pill.left-M.left;
+      m.querySelectorAll(".src").forEach(function(c){
+        var r=c.getBoundingClientRect(); if (r.left-M.left>40) { var sx=r.right-M.left, sy=r.top-M.top+r.height/2;
+          out+='<path d="M'+sx+' '+sy+' C'+(sx+60)+' '+sy+' '+(px-50)+' '+ty+' '+px+' '+ty+'" fill="none" stroke="#D5D9D1" stroke-width="1.5"/>'; }
+      });
+      out+='<line x1="'+(pill.right-M.left)+'" x2="'+tx+'" y1="'+ty+'" y2="'+ty+'" stroke="#242824" stroke-width="1.5"/>';
+      svg.innerHTML=out;
+    }
+    draw(); addEventListener("resize", draw); if (document.fonts) document.fonts.ready.then(draw);
+  })();
+  // S&P 500 chart: SPY closes (price only) from Binker's market history: each week's last close plus every year-end close, Dec 31 2021 to Dec 31 2024, both indexed to 100.
+  (function(){
+    var USD=[100.0,98.13,97.84,92.21,93.05,94.47,92.74,91.42,92.17,90.99,88.44,93.59,95.31,95.36,94.23,92.17,89.7,86.74,86.61,84.58,82.03,87.43,86.44,82.07,77.03,82.13,80.27,81.83,81.09,83.18,86.74,87.05,89.92,88.88,85.34,82.58,85.61,81.18,77.47,75.2,76.38,75.3,78.8,81.91,79.24,83.9,83.38,84.71,85.67,82.8,80.7,80.62,80.52,81.71,83.9,83.35,85.41,86.82,85.91,85.75,83.46,85.1,81.25,82.11,83.32,86.19,86.15,86.84,86.79,87.57,86.88,86.66,88.14,88.43,90.1,90.51,92.53,91.21,93.33,92.33,94.59,95.2,96.2,94.07,93.83,91.9,92.63,95.0,93.8,93.35,90.62,90.0,90.44,90.85,88.68,86.47,91.52,92.77,94.91,95.86,96.66,96.89,98.81,99.72,100.07,98.52,100.36,101.57,102.62,104.08,105.52,105.17,106.92,107.98,107.74,107.34,109.74,110.13,109.15,107.56,104.25,107.01,107.65,109.66,111.47,111.47,111.03,112.43,114.28,114.64,114.58,116.78,117.9,115.59,114.63,112.2,112.22,116.71,118.35,118.68,113.77,118.33,119.64,120.32,120.64,122.03,123.08,121.91,120.23,125.95,123.33,125.38,126.86,127.97,127.21,124.46,125.28,123.4], BTC=[100.0,109.35,105.12,117.13,114.04,105.41,101.26,105.76,108.83,107.66,105.57,103.68,99.52,95.41,103.19,106.88,104.52,104.04,111.27,133.75,130.09,141.42,134.75,130.67,174.24,179.12,192.89,174.37,180.21,169.58,168.74,173.09,170.64,197.13,195.04,191.5,185.4,190.11,185.9,179.21,180.95,181.74,190.33,184.16,173.51,228.09,231.24,237.42,232.15,223.79,224.46,222.25,224.57,223.2,195.14,170.2,171.38,171.44,183.74,161.63,166.59,176.22,186.38,138.65,140.34,140.15,142.25,131.91,147.33,138.21,136.21,149.7,151.78,153.26,153.1,158.28,162.74,137.6,141.8,140.91,144.4,147.4,151.94,149.83,147.8,163.37,164.68,170.5,167.67,162.45,157.88,154.87,149.85,156.61,138.34,118.08,122.02,115.12,120.09,117.68,115.69,101.59,109.13,104.96,110.07,103.3,108.45,113.01,113.64,111.6,103.64,93.37,97.6,80.08,73.05,71.62,79.67,72.09,74.51,74.12,75.62,77.72,79.26,83.53,76.98,75.33,76.18,75.08,80.17,82.82,87.96,95.43,94.3,80.23,78.16,84.6,85.35,91.76,85.51,92.96,97.65,90.46,87.67,84.69,90.0,90.49,83.3,84.71,80.13,76.19,62.71,58.65,60.28,59.31,58.06,58.96,61.61,61.16];
+    var study=document.getElementById("sp"), plot=document.getElementById("sp-plot"), svg=document.getElementById("sp-chart");
+    var bands=study.querySelectorAll(".band"), n=USD.length, Y=[0,52,104,n-1]; // index of each year-end close
+    function draw(){
+      var gut=parseFloat(getComputedStyle(study).getPropertyValue("--gut"))||0;
+      var W=plot.clientWidth-gut, H=plot.clientHeight, top=14, bot=H-14, lo=50, hi=245;
+      var x=function(i){ return i*W/(n-1); }, y=function(v){ return bot-(v-lo)/(hi-lo)*(bot-top); };
+      var line=function(a,b,arr){ var d=""; for (var i=a;i<=b;i++) d+=(i>a?"L":"M")+x(i).toFixed(1)+" "+y(arr[i]).toFixed(1); return d; };
+      // Columns of the stats and the axis follow the real year boundaries.
+      ["--c1","--c2","--c3"].forEach(function(k,j){ study.style.setProperty(k,(x(Y[j+1])-x(Y[j])).toFixed(1)+"px"); });
+      [[0,0],[1,2]].forEach(function(p){ var bnd=bands[p[0]], a=Y[p[1]], b=Y[p[1]+1]; bnd.style.left=x(a)+"px"; bnd.style.width=(x(b)-x(a))+"px"; bnd.style.bottom=(study.clientHeight-study.querySelector(".axis").offsetTop)+"px"; });
+      var out="", tone=function(a,b,c,id){
+        var ref=y(BTC[a]), d=line(a,b,BTC);
+        return '<defs><linearGradient id="'+id+'" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="'+c+'" stop-opacity=".22"/><stop offset="1" stop-color="'+c+'" stop-opacity=".02"/></linearGradient></defs>'+
+          '<path d="'+d+' L'+x(b).toFixed(1)+' '+ref+' L'+x(a).toFixed(1)+' '+ref+' Z" fill="url(#'+id+')"/>'+
+          '<line x1="'+x(a)+'" x2="'+x(b)+'" y1="'+ref+'" y2="'+ref+'" stroke="'+c+'" stroke-opacity=".45" stroke-dasharray="2 5" stroke-linecap="round"/>'+
+          '<path d="'+d+'" fill="none" stroke="'+c+'" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>';
+      };
+      out+='<path d="'+line(0,n-1,USD)+'" fill="none" stroke="#AEB4AB" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>';
+      out+='<path d="'+line(Y[1],Y[2],BTC)+'" fill="none" stroke="#242824" stroke-opacity=".55" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>';
+      out+=tone(Y[0],Y[1],"#28734F","g22")+tone(Y[2],n-1,"#B33D32","g24");
+      // Direct labels at the right end of each line.
+      svg.setAttribute("viewBox","0 0 "+plot.clientWidth+" "+H);
+      svg.innerHTML=out;
+    }
+    draw(); addEventListener("resize", draw);
+    if (!("IntersectionObserver" in window) || matchMedia("(prefers-reduced-motion: reduce)").matches || plot.getBoundingClientRect().top < innerHeight) return;
+    plot.classList.add("pre");
+    var io=new IntersectionObserver(function(es){ if (es[0].isIntersecting){ plot.classList.remove("pre"); io.disconnect(); } }, {threshold:.4});
+    io.observe(plot);
+  })();
+
+})();
+</script>
+
 </body>
 </html>
