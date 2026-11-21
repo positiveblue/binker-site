@@ -506,8 +506,12 @@ footer a{text-underline-offset:4px}
     var error = form.querySelector(".error"), go = form.querySelector(".go"), email = form.elements.email, platform = "ios", timer;
     if (typeof dlg.showModal !== "function") dlg.showModal = function(){ dlg.setAttribute("open", ""); };
     function close(){ clearTimeout(timer); if (dlg.open) dlg.close ? dlg.close() : dlg.removeAttribute("open"); }
+    // A phone sees only its own store; desktops, iPads (which say they are
+    // Macs) and anything unrecognised see both.
+    var ua = navigator.userAgent, own = /iPhone|iPod/.test(ua) ? "ios" : /Android/.test(ua) ? "android" : null;
     document.querySelectorAll(".store[data-store]").forEach(function(a){
       var p = a.getAttribute("data-store");
+      if (own && p !== own){ a.hidden = true; return; }
       if (STORE_LINKS[p]){ a.href = STORE_LINKS[p]; return; }
       a.addEventListener("click", function(e){
         e.preventDefault();
